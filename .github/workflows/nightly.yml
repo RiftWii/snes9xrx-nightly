@@ -1,6 +1,6 @@
 # Builds Snes9x RX from niuus/Snes9xRX's newest commit, once a day when there is
 # one, and publishes it as a release with its own tag (nightly-<date>-<commit>),
-# for RiftWii's app store (https://github.com/RiftWii/apps). A tag is never
+# for the Rift Store, RiftWii's homebrew store (https://github.com/RiftWii/apps). A tag is never
 # moved: the store pins each build by its checksum. Each release carries the
 # exact source it was built from (GPL).
 name: Nightly
@@ -117,11 +117,11 @@ jobs:
           TAG: ${{ needs.check.outputs.tag }}
           SHA: ${{ needs.check.outputs.sha }}
         run: |
-          (cd dist && zip -qr "../Snes9xRX-$TAG.zip" apps)
+          (cd dist && zip -qr "../Snes9xRX-$TAG.zip" .)
           rm -rf source/.git
           tar -czf "source-$TAG.tar.gz" source
           gh release create "$TAG" -R "$GITHUB_REPOSITORY" --prerelease --title "$TAG" \
-            --notes "Snes9x RX built from https://github.com/niuus/Snes9xRX/commit/$SHA (its source is attached). Not an official release: a daily build for RiftWii's app store." \
+            --notes "Snes9x RX built from https://github.com/niuus/Snes9xRX/commit/$SHA (its source is attached). Not an official release: a daily build for the Rift Store, RiftWii's homebrew store." \
             "Snes9xRX-$TAG.zip" "source-$TAG.tar.gz"
       - name: Keep the newest 10 builds
         env:
