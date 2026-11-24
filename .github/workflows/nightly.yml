@@ -53,6 +53,8 @@ jobs:
       - name: Build
         run: |
           cd src
+          (command -v dkp-pacman && dkp-pacman -Syu --noconfirm ppc-freetype ppc-libpng ppc-zlib ppc-mxml ppc-libogg ppc-libvorbisidec) || (command -v pacman && pacman -Syu --noconfirm ppc-freetype ppc-libpng ppc-zlib ppc-mxml ppc-libogg ppc-libvorbisidec)
+          export PATH="$DEVKITPRO/portlibs/ppc/bin:$PATH"
           make -f Makefile.wii -j2
       - name: Package
         run: |
