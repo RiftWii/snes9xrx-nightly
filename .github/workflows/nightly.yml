@@ -53,7 +53,7 @@ jobs:
       - name: Build
         run: |
           cd src
-          export PATH="$DEVKITPRO/portlibs/ppc/bin:$PATH"
+          export PATH="$DEVKITPRO/portlibs/ppc/bin:$DEVKITPPC/bin:$PATH"
           # The Makefile asks freetype-config, which the image may not have.
           if ! command -v freetype-config; then
             mkdir -p "$RUNNER_TEMP/bin"
@@ -62,6 +62,11 @@ jobs:
             export PATH="$RUNNER_TEMP/bin:$PATH"
           fi
           freetype-config --cflags
+          # Snes9x RX reads Mini-XML 2's structures, which Mini-XML 3 hides:
+          # 2.12 is built here, in place of the image's, for this build only.
+          (cd "$RUNNER_TEMP" && curl -fsSL https://github.com/michaelrsweet/mxml/releases/download/v2.12/mxml-2.12.tar.gz | tar xz && cd mxml-2.12 &&
+            ./configure --host=powerpc-eabi CC=powerpc-eabi-gcc AR=powerpc-eabi-ar RANLIB=powerpc-eabi-ranlib CFLAGS="-O2 -mrvl -mcpu=750 -meabi -mhard-float" --disable-threads --disable-shared --enable-static &&
+            make libmxml.a && cp libmxml.a "$DEVKITPRO/portlibs/ppc/lib/" && cp mxml.h "$DEVKITPRO/portlibs/ppc/include/")
           make -f Makefile.wii -j2
       - name: Package
         run: |
