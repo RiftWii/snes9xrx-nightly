@@ -67,6 +67,25 @@ jobs:
           (cd "$RUNNER_TEMP" && curl -fsSL https://github.com/michaelrsweet/mxml/releases/download/v2.12/mxml-2.12.tar.gz | tar xz && cd mxml-2.12 &&
             ./configure --host=powerpc-eabi CC=powerpc-eabi-gcc AR=powerpc-eabi-ar RANLIB=powerpc-eabi-ranlib CFLAGS="-O2 -mrvl -mcpu=750 -meabi -mhard-float" --disable-threads --disable-shared --enable-static &&
             make libmxml.a && cp libmxml.a "$DEVKITPRO/portlibs/ppc/lib/" && cp mxml.h "$DEVKITPRO/portlibs/ppc/include/")
+          # Its code reads <file>_size for each embedded file, which today's
+          # bin2s no longer writes: a wrapper adds it where it is missing.
+          mkdir -p "$RUNNER_TEMP/bin"
+          cat > "$RUNNER_TEMP/bin/bin2s" <<'WRAP'
+          #!/bin/sh
+          out=$("$DEVKITPRO/tools/bin/bin2s" "$@") || exit $?
+          printf '%s\n' "$out"
+          skip=0
+          for a in "$@"; do
+            if [ $skip = 1 ]; then skip=0; continue; fi
+            case "$a" in -a|-H) skip=1; continue;; -*) continue;; esac
+            n=$(basename "$a" | sed 's/[^A-Za-z0-9_]/_/g')
+            case "$out" in *"${n}_size"*) continue;; esac
+            printf '\t.section .rodata\n\t.balign 4\n\t.global %s_size\n%s_size:\n\t.int %s\n' "$n" "$n" "$(wc -c < "$a")"
+          done
+          WRAP
+          sed -i 's/^          //' "$RUNNER_TEMP/bin/bin2s"
+          chmod +x "$RUNNER_TEMP/bin/bin2s"
+          export PATH="$RUNNER_TEMP/bin:$PATH"
           make -f Makefile.wii -j2
       - name: Package
         run: |
