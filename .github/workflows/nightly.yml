@@ -53,8 +53,15 @@ jobs:
       - name: Build
         run: |
           cd src
-          (command -v dkp-pacman && dkp-pacman -Syu --noconfirm ppc-freetype ppc-libpng ppc-zlib ppc-mxml ppc-libogg ppc-libvorbisidec) || (command -v pacman && pacman -Syu --noconfirm ppc-freetype ppc-libpng ppc-zlib ppc-mxml ppc-libogg ppc-libvorbisidec)
           export PATH="$DEVKITPRO/portlibs/ppc/bin:$PATH"
+          # The Makefile asks freetype-config, which the image may not have.
+          if ! command -v freetype-config; then
+            mkdir -p "$RUNNER_TEMP/bin"
+            printf '#!/bin/sh\nexec powerpc-eabi-pkg-config freetype2 "$@"\n' > "$RUNNER_TEMP/bin/freetype-config"
+            chmod +x "$RUNNER_TEMP/bin/freetype-config"
+            export PATH="$RUNNER_TEMP/bin:$PATH"
+          fi
+          freetype-config --cflags
           make -f Makefile.wii -j2
       - name: Package
         run: |
