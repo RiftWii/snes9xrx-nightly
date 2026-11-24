@@ -117,12 +117,12 @@ jobs:
           TAG: ${{ needs.check.outputs.tag }}
           SHA: ${{ needs.check.outputs.sha }}
         run: |
-          (cd dist && zip -qr "../Snes9xRX-nightly-$TAG.zip" apps)
+          (cd dist && zip -qr "../Snes9xRX-$TAG.zip" apps)
           rm -rf source/.git
           tar -czf "source-$TAG.tar.gz" source
           gh release create "$TAG" -R "$GITHUB_REPOSITORY" --prerelease --title "$TAG" \
             --notes "Snes9x RX built from https://github.com/niuus/Snes9xRX/commit/$SHA (its source is attached). Not an official release: a daily build for RiftWii's app store." \
-            "Snes9xRX-nightly-$TAG.zip" "source-$TAG.tar.gz"
+            "Snes9xRX-$TAG.zip" "source-$TAG.tar.gz"
       - name: Keep the newest 10 builds
         env:
           GH_TOKEN: ${{ github.token }}
