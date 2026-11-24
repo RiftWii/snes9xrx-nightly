@@ -68,11 +68,13 @@ jobs:
             ./configure --host=powerpc-eabi CC=powerpc-eabi-gcc AR=powerpc-eabi-ar RANLIB=powerpc-eabi-ranlib CFLAGS="-O2 -mrvl -mcpu=750 -meabi -mhard-float" --disable-threads --disable-shared --enable-static &&
             make libmxml.a && cp libmxml.a "$DEVKITPRO/portlibs/ppc/lib/" && cp mxml.h "$DEVKITPRO/portlibs/ppc/include/")
           # Its code reads <file>_size for each embedded file, which today's
-          # bin2s no longer writes: a wrapper adds it where it is missing.
-          mkdir -p "$RUNNER_TEMP/bin"
-          cat > "$RUNNER_TEMP/bin/bin2s" <<'WRAP'
+          # bin2s no longer writes: a wrapper adds it where it is missing. It
+          # takes bin2s's place (devkitPPC's rules put tools/bin first in PATH);
+          # the container is thrown away after the build.
+          mv "$DEVKITPRO/tools/bin/bin2s" "$DEVKITPRO/tools/bin/bin2s.real"
+          cat > "$DEVKITPRO/tools/bin/bin2s" <<'WRAP'
           #!/bin/sh
-          out=$("$DEVKITPRO/tools/bin/bin2s" "$@") || exit $?
+          out=$("$DEVKITPRO/tools/bin/bin2s.real" "$@") || exit $?
           printf '%s\n' "$out"
           skip=0
           for a in "$@"; do
@@ -83,9 +85,7 @@ jobs:
             printf '\t.section .rodata\n\t.balign 4\n\t.global %s_size\n%s_size:\n\t.int %s\n' "$n" "$n" "$(wc -c < "$a")"
           done
           WRAP
-          sed -i 's/^          //' "$RUNNER_TEMP/bin/bin2s"
-          chmod +x "$RUNNER_TEMP/bin/bin2s"
-          export PATH="$RUNNER_TEMP/bin:$PATH"
+          chmod +x "$DEVKITPRO/tools/bin/bin2s"
           make -f Makefile.wii -j2
       - name: Package
         run: |
